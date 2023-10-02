@@ -187,10 +187,16 @@ bool LongFloat::operator>(const LongFloat& second) const
 			if (a.whole_part_[i] < b.whole_part_[i]) {
 				return true;
 			}
+			if (a.whole_part_[i] > b.whole_part_[i]) {
+				return false;
+			}
 		}
 		for (int i = 0; i < a.fractional_part_.size(); i++) {
 			if (a.fractional_part_[i] < b.fractional_part_[i]) {
 				return true;
+			}
+			if (a.fractional_part_[i] > b.fractional_part_[i]) {
+				return false;
 			}
 		}
 	}
@@ -199,10 +205,16 @@ bool LongFloat::operator>(const LongFloat& second) const
 			if (a.whole_part_[i] > b.whole_part_[i]) {
 				return true;
 			}
+			if (a.whole_part_[i] < b.whole_part_[i]) {
+				return false;
+			}
 		}
 		for (int i = 0; i < a.fractional_part_.size(); i++) {
 			if (a.fractional_part_[i] > b.fractional_part_[i]) {
 				return true;
+			}
+			if (a.whole_part_[i] < b.whole_part_[i]) {
+				return false;
 			}
 		}
 	}
