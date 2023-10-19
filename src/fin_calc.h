@@ -7,9 +7,14 @@ class LongFloat {
 public:
 	LongFloat();
 	LongFloat(std::string str);
+	LongFloat(long double val);
 	std::string to_string() const;
 	LongFloat operator+(const LongFloat& second);
 	LongFloat operator-(const LongFloat& second);
+	LongFloat operator*(const LongFloat& second);
+	LongFloat operator/(const LongFloat& second);
+	long double ToLongDouble() const;
+
 	bool operator==(const LongFloat& second)const;
 	bool operator!=(const LongFloat& second)const;
 	bool operator>(const LongFloat& second)const;

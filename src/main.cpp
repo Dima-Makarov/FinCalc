@@ -33,7 +33,7 @@ int main(int, char**)
     WNDCLASSEXW wc = { sizeof(wc), CS_OWNDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"ImGui Example", NULL };
     ::RegisterClassExW(&wc);
     HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Financial calculator", WS_OVERLAPPEDWINDOW, 100, 100, 800, 500, NULL, NULL, wc.hInstance, NULL);
-
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
     // Initialize OpenGL
     if (!CreateDeviceWGL(hwnd, &g_MainWindow))
     {
@@ -54,7 +54,7 @@ int main(int, char**)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;   // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
-    io.Fonts->AddFontFromFileTTF("arial.ttf", 18.0f);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\calibri.ttf", 18.0f);
     // Setup Dear ImGui style
     //ImGui::StyleColorsDark();
     ImGui::StyleColorsLight();
@@ -69,13 +69,15 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     enum Operation {
         PLUS,
-        MINUS
+        MINUS,
+        MULT,
+        DIVIDE
     };
     static char first_num[64];
     static char second_num[64];
     static char result[64];
-    strcpy(first_num, "1000000000000.000000");
-    strcpy(second_num, "1000000000000.000000");
+    strcpy(first_num, "42");
+    strcpy(second_num, "42");
     // Main loop
     bool done = false;
     while (!done)
@@ -108,7 +110,8 @@ int main(int, char**)
         ImGui::SetNextWindowSize(viewport->Size);
 
         ImGui::Begin("Example: Fullscreen window", nullptr, flags);
-        ImGui::Text("Sorry, enabling russian letters here is a bit tidious, so let's pretend like I'm a chinese student");
+
+        //ImGui::Text("Sorry, enabling russian letters here is a bit tidious, so let's pretend like I'm a chinese student");
         ImGui::Text("Creator:");
         ImGui::Text("Makarov Dmitry Vadimovich, group 4, course 4, year 2023");
         ImGui::SeparatorText("Calculator");
@@ -117,7 +120,7 @@ int main(int, char**)
         ImGui::SetNextItemWidth(200);
         ImGui::InputTextWithHint("##First number", "Number 1", first_num, 64);
         ImGui::SameLine();
-        const char* items[] = { "+", "-" };
+        const char* items[] = { "+", "-", "*", "/"};
         static int item_current = 0;
         ImGui::SetNextItemWidth(200);
         ImGui::Combo("##OperationCombo", &item_current, items, IM_ARRAYSIZE(items));
@@ -139,10 +142,18 @@ int main(int, char**)
                 result_float = first_float - second_float;
                 break;
             }
+            case MULT: {
+                result_float = first_float * second_float;
+                break;
+            }
+            case DIVIDE: {
+                result_float = first_float / second_float;
+                break;
+            }
             }
             ImGui::Text(result_float.to_string().c_str());
         }
-        catch (const std::exception& e) {
+        catch (const std::invalid_argument& e) {
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), e.what());
         }
         ImGui::End();
