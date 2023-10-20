@@ -152,6 +152,14 @@ std::string LongFloat::to_string() const
 	if (a.is_negative_) {
 		result.insert(result.begin(), '-');
 	}
+	if (result[0] == '-') {
+		if (result[1] == ' ') {
+			result.erase(1, 2);
+		}
+	}
+	if (result[0] == ' ') {
+		result.erase(0, 1);
+	}
 	return result;
 }
 
@@ -309,17 +317,17 @@ LongFloat LongFloat::operator/(const LongFloat& second)
 	std::string r_debug = remainder.big_int_to_string(bi::bi_base::BI_DEC);
 
 	auto rem_str = remainder.big_int_to_string(bi::bi_base::BI_DEC);
-	long double rem_double = std::stoi(rem_str);
+	long double rem_double = std::stoll(rem_str);
 
 	rem_double /= 1e6;
 	rem_double /= num_b.ToLongDouble();
 	rem_double *= 1e6;
+	int64_t rem_int = static_cast<int64_t>(rem_double);
 	std::stringstream ss;
-	ss << std::fixed << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rem_double;
-
+	ss << std::setw(6) << std::setfill('0') << rem_int;
 	LongFloat result = std::string(quotient.big_int_to_string(bi::bi_base::BI_DEC)
 		+ "."
-		+ std::to_string(static_cast<int64_t>(rem_double)));
+		+ std::string(ss.str()));
 	result.is_negative_ = num_a.is_negative_ ^ num_b.is_negative_;
 
 	return result;

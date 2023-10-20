@@ -151,6 +151,13 @@ int main(int, char**)
             }
             }
             ImGui::Text(result_float.to_string().c_str());
+            if (ImGui::Button(u8"Переместить в первое поле")) {
+                strcpy(first_num, result_float.to_string().c_str());
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(u8"Переместить во второе поле")) {
+                strcpy(second_num, result_float.to_string().c_str());
+            }
         }
         catch (const std::invalid_argument& e) {
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), e.what());
