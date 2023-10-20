@@ -54,7 +54,7 @@ int main(int, char**)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;   // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\calibri.ttf", 18.0f);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\calibri.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
     // Setup Dear ImGui style
     //ImGui::StyleColorsDark();
     ImGui::StyleColorsLight();
@@ -111,14 +111,13 @@ int main(int, char**)
 
         ImGui::Begin("Example: Fullscreen window", nullptr, flags);
 
-        //ImGui::Text("Sorry, enabling russian letters here is a bit tidious, so let's pretend like I'm a chinese student");
-        ImGui::Text("Creator:");
-        ImGui::Text("Makarov Dmitry Vadimovich, group 4, course 4, year 2023");
-        ImGui::SeparatorText("Calculator");
+        ImGui::Text(u8"Автор:");
+        ImGui::Text(u8"Макаров Дмитрий Вадимович, группа 4, курс 4, год 2023");
+        ImGui::SeparatorText(u8"Калькулятор");
 
 
         ImGui::SetNextItemWidth(200);
-        ImGui::InputTextWithHint("##First number", "Number 1", first_num, 64);
+        ImGui::InputTextWithHint("##First number", u8"Число 1", first_num, 64);
         ImGui::SameLine();
         const char* items[] = { "+", "-", "*", "/"};
         static int item_current = 0;
@@ -126,8 +125,8 @@ int main(int, char**)
         ImGui::Combo("##OperationCombo", &item_current, items, IM_ARRAYSIZE(items));
         ImGui::SameLine();
         ImGui::SetNextItemWidth(200);
-        ImGui::InputTextWithHint("##Second number", "Number 2", second_num, 64);
-        ImGui::Text("Result:");
+        ImGui::InputTextWithHint("##Second number", u8"Число 2", second_num, 64);
+        ImGui::Text(u8"Результат:");
         try {
             LongFloat first_float{ std::string(first_num) };
             LongFloat second_float{ std::string(second_num) };

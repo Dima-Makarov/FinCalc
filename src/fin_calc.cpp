@@ -2,11 +2,11 @@
 #include "stdexcept"
 #include <sstream>
 #include <iomanip>
+#include "big_int.hpp"
 
 LongFloat::LongFloat() {
 	whole_part_.resize(13);
 	fractional_part_.resize(6);
-
 }
 
 LongFloat::LongFloat(std::string str)
@@ -18,13 +18,13 @@ LongFloat::LongFloat(std::string str)
 		}
 	}
 	if (contains_only_spaces || str.size() == 0) {
-		throw std::invalid_argument("Empty number");
+		throw std::invalid_argument(u8"Пустое число");
 	}
 	for (auto s : str) {
 		if (!(s >= '0' && s <= '9') && s != '.' && s != ',' && s != '-' && s != ' ') {
-			std::string msg = "Wrong symbol found: ";
+			std::string msg = u8"Обнаружен неправильный символ: ";
 			msg.push_back(s);
-			throw std::invalid_argument(msg.c_str());
+			throw std::invalid_argument(msg);
 		}
 	}
 	for (int i = 0; i < str.size(); i++) {
@@ -38,7 +38,7 @@ LongFloat::LongFloat(std::string str)
 	}
 	for (int i = 1; i < str.size(); i++) {
 		if (str[i] == '-') {
-			throw std::invalid_argument("Minus is misplaced");
+			throw std::invalid_argument(u8"Минус не на своем месте");
 		}
 	}
 	if (str[0] == '-') {
@@ -52,14 +52,14 @@ LongFloat::LongFloat(std::string str)
 	for (auto i = 0; i < str.size(); i++) {
 		if (str[i] == '.') {
 			if (got_dot || got_comma) {
-				throw std::invalid_argument("Excess amount of dots/commas");
+				throw std::invalid_argument(u8"Слишком много точек/запятых");
 			}
 			got_dot = true;
 			separator_index = i;
 		}
 		if (str[i] == ',') {
 			if (got_dot || got_comma) {
-				throw std::invalid_argument("Excess amount of dots/commas");
+				throw std::invalid_argument(u8"Слишком много точек/запятых");
 			}
 			got_comma = true;
 			separator_index = i;
@@ -70,12 +70,12 @@ LongFloat::LongFloat(std::string str)
 			continue;
 		}
 		if (str[i] == ' ') {
-			throw std::invalid_argument("Wrong space placement");
+			throw std::invalid_argument(u8"Неправильное положение пробела");
 		}
 	}
 	for (int i = separator_index-1; i < str.length(); i++) {
 		if (str[i] == ' ') {
-			throw std::invalid_argument("Spaces in fractional part not allowed");
+			throw std::invalid_argument(u8"Пробелы в дробной части недопустимы");
 		}
 	}
 	for (int i = 0; i < str.length(); i++) {
@@ -258,7 +258,7 @@ LongFloat LongFloat::operator*(const LongFloat& second)
 	}
 
 	if (c.size() - first_nonzero_index - 12 > 13) {
-		throw std::invalid_argument("Number too big");
+		throw std::invalid_argument(u8"Число слишком большое");
 	}
 	
 	int begin_index = c.size() - 12 - 13;
@@ -274,14 +274,55 @@ LongFloat LongFloat::operator*(const LongFloat& second)
 
 LongFloat LongFloat::operator/(const LongFloat& second)
 {
-	LongFloat a = Normalize(*this);
-	LongFloat b = Normalize(second);
-	if (b == LongFloat("0")) {
-		throw std::invalid_argument("Division by zero!!!");
+	LongFloat num_a = Normalize(*this);
+	LongFloat num_b = Normalize(second);
+	if (num_b == LongFloat("0")) {
+		throw std::invalid_argument(u8"Деление на ноль");
 	}
-	long double a_d = a.ToLongDouble();
-	long double b_d = b.ToLongDouble();
-	return LongFloat(LongFloat(a_d / b_d));
+	auto vec_to_str = [](const std::vector<int8_t>& vec) {
+		std::string result;
+		for (auto i : vec) {
+			result.push_back(static_cast<char>(i + '0'));
+		}
+		return result;
+	};
+	int total_length = num_a.fractional_part_.size() + num_a.whole_part_.size();
+	std::vector<int8_t> a(total_length);
+	std::vector<int8_t> b(total_length);
+	for (int i = 0; i < num_a.whole_part_.size(); i++) {
+		a[i] = num_a.whole_part_[i];
+		b[i] = num_b.whole_part_[i];
+	}
+	for (int i = num_a.whole_part_.size(); i < total_length; i++) {
+		a[i] = num_a.fractional_part_[i - num_a.whole_part_.size()];
+		b[i] = num_b.fractional_part_[i - num_a.whole_part_.size()];
+	}
+
+	bi::big_int a_lib;
+	bi::big_int b_lib;
+
+	a_lib.big_int_from_string(vec_to_str(a), bi::bi_base::BI_DEC);
+	b_lib.big_int_from_string(vec_to_str(b), bi::bi_base::BI_DEC);
+	bi::big_int quotient, remainder;
+	a_lib.big_int_div(b_lib, quotient, remainder);
+	std::string q_debug = quotient.big_int_to_string(bi::bi_base::BI_DEC);
+	std::string r_debug = remainder.big_int_to_string(bi::bi_base::BI_DEC);
+
+	auto rem_str = remainder.big_int_to_string(bi::bi_base::BI_DEC);
+	long double rem_double = std::stoi(rem_str);
+
+	rem_double /= 1e6;
+	rem_double /= num_b.ToLongDouble();
+	rem_double *= 1e6;
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rem_double;
+
+	LongFloat result = std::string(quotient.big_int_to_string(bi::bi_base::BI_DEC)
+		+ "."
+		+ std::to_string(static_cast<int64_t>(rem_double)));
+	result.is_negative_ = num_a.is_negative_ ^ num_b.is_negative_;
+
+	return result;
 }
 
 long double LongFloat::ToLongDouble() const
@@ -390,7 +431,7 @@ LongFloat LongFloat::Normalize(const LongFloat& f)
 	result.fractional_part_.resize(6);
 	int size = result.whole_part_.size();
 	if (size > 13) {
-		throw std::invalid_argument("Number too big");
+		throw std::invalid_argument(u8"Число слишком большое");
 	}
 	if (size < 13) {
 		for (int i = 0; i < 13 - size; i++) {
@@ -421,7 +462,7 @@ LongFloat LongFloat::SumTwoNumbersWnoSign(const LongFloat& one, const LongFloat&
 		}
 	}
 	if (carry != 0) {
-		throw std::invalid_argument("Overflow");
+		throw std::invalid_argument(u8"Число слишком большое");
 	}
 	return result;
 }
