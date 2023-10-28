@@ -1,5 +1,7 @@
 #include "imgui.h"
 #include <iostream>
+#include <sstream>;
+
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_win32.h"
 #ifndef WIN32_LEAN_AND_MEAN
@@ -9,7 +11,6 @@
 #include <GL/GL.h>
 #include <tchar.h>
 #include "fin_calc.h"
-
 // Data stored per platform window
 struct WGL_WindowData { HDC hDC; };
 
@@ -25,6 +26,33 @@ void CleanupDeviceWGL(HWND hWnd, WGL_WindowData* data);
 void ResetDeviceWGL();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+enum Operation {
+    PLUS = 0,
+    MINUS = 1,
+    MULT = 2,
+    DIVIDE = 3
+};
+
+LongFloat PerformOp(const LongFloat& a, const LongFloat& b, int op) {
+    switch (op) {
+    case PLUS: {
+        return a + b;
+    }
+    case MINUS: {
+        return a - b;
+    }
+    case MULT: {
+        return a * b;
+    }
+    case DIVIDE: {
+        return a / b;
+    }
+    default: {
+        throw std::invalid_argument("Something is wrong, please restart your computer");
+    }
+    }
+}
+
 // Main code
 int main(int, char**)
 {
@@ -32,7 +60,7 @@ int main(int, char**)
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_OWNDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"ImGui Example", NULL };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Financial calculator", WS_OVERLAPPEDWINDOW, 100, 100, 800, 500, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Financial calculator", WS_OVERLAPPEDWINDOW, 100, 100, 1200, 500, NULL, NULL, wc.hInstance, NULL);
     ShowWindow(GetConsoleWindow(), SW_HIDE);
     // Initialize OpenGL
     if (!CreateDeviceWGL(hwnd, &g_MainWindow))
@@ -67,17 +95,17 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    enum Operation {
-        PLUS,
-        MINUS,
-        MULT,
-        DIVIDE
-    };
+
     static char first_num[64];
     static char second_num[64];
+    static char third_num[64];
+    static char fourth_num[64];
+
     static char result[64];
-    strcpy(first_num, "42");
-    strcpy(second_num, "42");
+    strcpy(first_num, "0");
+    strcpy(second_num, "0");
+    strcpy(third_num, "0");
+    strcpy(fourth_num, "0");
     // Main loop
     bool done = false;
     while (!done)
@@ -115,48 +143,94 @@ int main(int, char**)
         ImGui::Text(u8"Макаров Дмитрий Вадимович, группа 4, курс 4, год 2023");
         ImGui::SeparatorText(u8"Калькулятор");
 
-
+        const char* items[] = { "+", "-", "*", "/" };
+        static int first_op = 0;
+        static int second_op = 0;
+        static int third_op = 0;
+        
         ImGui::SetNextItemWidth(200);
         ImGui::InputTextWithHint("##First number", u8"Число 1", first_num, 64);
         ImGui::SameLine();
-        const char* items[] = { "+", "-", "*", "/"};
-        static int item_current = 0;
-        ImGui::SetNextItemWidth(200);
-        ImGui::Combo("##OperationCombo", &item_current, items, IM_ARRAYSIZE(items));
+        //num + (num + num) + num;
+        ImGui::SetNextItemWidth(40);
+        ImGui::Combo("##Operation1Combo", &first_op, items, IM_ARRAYSIZE(items));
         ImGui::SameLine();
+        
+        ImGui::Text("(");
+        ImGui::SameLine();
+
         ImGui::SetNextItemWidth(200);
         ImGui::InputTextWithHint("##Second number", u8"Число 2", second_num, 64);
+        ImGui::SameLine();
+
+        ImGui::SetNextItemWidth(40);
+        ImGui::Combo("##Operation2Combo", &second_op, items, IM_ARRAYSIZE(items));
+        ImGui::SameLine();
+
+        ImGui::SetNextItemWidth(200);
+        ImGui::InputTextWithHint("##Third number", u8"Число 3", third_num, 64);
+        ImGui::SameLine();
+
+        ImGui::Text(")");
+        ImGui::SameLine();
+
+        ImGui::SetNextItemWidth(40);
+        ImGui::Combo("##Operation3Combo", &third_op, items, IM_ARRAYSIZE(items));
+        ImGui::SameLine();
+
+        ImGui::SetNextItemWidth(200);
+        ImGui::InputTextWithHint("##Fourth number", u8"Число 4", fourth_num, 64);
+        
         ImGui::Text(u8"Результат:");
+        ImGui::SameLine();
         try {
+            LongFloat result_prior;
             LongFloat first_float{ std::string(first_num) };
             LongFloat second_float{ std::string(second_num) };
+            LongFloat third_float{ std::string(third_num) };
+            LongFloat fourth_float{ std::string(fourth_num) };
             LongFloat result_float;
-            switch (item_current) {
-            case PLUS:
-            {
-                result_float = first_float + second_float;
-                break;
+            result_prior = PerformOp(second_float, third_float, (Operation)second_op);
+            if ((first_op < 2 && second_op < 2) ||
+                (first_op >= 2 && second_op >= 2) || 
+                (first_op >= 2 && second_op < 2)) {
+                result_float = PerformOp(PerformOp(first_float, result_prior, first_op), fourth_float, third_op);
             }
-            case MINUS: {
-                result_float = first_float - second_float;
-                break;
-            }
-            case MULT: {
-                result_float = first_float * second_float;
-                break;
-            }
-            case DIVIDE: {
-                result_float = first_float / second_float;
-                break;
-            }
+            if (first_op < 2 && second_op >= 2) {
+                result_float = PerformOp(first_float, PerformOp(result_prior, fourth_float, third_op), first_op);
             }
             ImGui::Text(result_float.to_string().c_str());
-            if (ImGui::Button(u8"Переместить в первое поле")) {
-                strcpy(first_num, result_float.to_string().c_str());
-            }
+            ImGui::SeparatorText(u8"Округление: (1 - математическое, 2 - банковское, 3 - усечение)");
+            static int round_op = 0;
+            static const char* round_options[] = {"1", "2", "3"};
+            ImGui::Text(u8"Тип:");
             ImGui::SameLine();
-            if (ImGui::Button(u8"Переместить во второе поле")) {
-                strcpy(second_num, result_float.to_string().c_str());
+            ImGui::SetNextItemWidth(40);
+            ImGui::Combo("##OperationRoundCombo", &round_op, round_options, IM_ARRAYSIZE(round_options));
+            std::stringstream ss;
+            ImGui::SameLine();
+            switch (round_op) {
+            case 0: {
+                LongFloat tmp = result_float;
+                tmp.MathRound();
+                ss << u8"Матем(" << result_float.to_string().c_str() << ") = " << tmp.to_string().c_str();
+                ImGui::Text(ss.str().c_str());
+                break;
+            }
+            case 1: {
+                LongFloat tmp = result_float;
+                tmp.BankRound();
+                ss << u8"Банк(" << result_float.to_string().c_str() << ") = " << tmp.to_string().c_str();
+                ImGui::Text(ss.str().c_str());
+                break;
+            }
+            case 2: {
+                LongFloat tmp = result_float;
+                tmp.TruncRound();
+                ss << u8"Усеч(" << result_float.to_string().c_str() << ") = " << tmp.to_string().c_str();
+                ImGui::Text(ss.str().c_str());
+                break;
+            }
             }
         }
         catch (const std::invalid_argument& e) {

@@ -167,7 +167,7 @@ std::string LongFloat::to_string() const
 	return result;
 }
 
-LongFloat LongFloat::operator+(const LongFloat& second)
+LongFloat LongFloat::operator+(const LongFloat& second) const
 {
 	LongFloat a = Normalize(*this);
 	LongFloat b = Normalize(second);
@@ -191,7 +191,7 @@ LongFloat LongFloat::operator+(const LongFloat& second)
 	return result;
 }
 
-LongFloat LongFloat::operator-(const LongFloat& second)
+LongFloat LongFloat::operator-(const LongFloat& second) const
 {
 	LongFloat a = Normalize(*this);
 	LongFloat b = Normalize(second);
@@ -224,7 +224,7 @@ LongFloat LongFloat::operator-(const LongFloat& second)
 	return result;
 }
 
-LongFloat LongFloat::operator*(const LongFloat& second)
+LongFloat LongFloat::operator*(const LongFloat& second) const
 {
 	LongFloat num_a = Normalize(*this);
 	LongFloat num_b = Normalize(second);
@@ -284,7 +284,7 @@ LongFloat LongFloat::operator*(const LongFloat& second)
 	return result;
 }
 
-LongFloat LongFloat::operator/(const LongFloat& second)
+LongFloat LongFloat::operator/(const LongFloat& second) const
 {
 	LongFloat num_a = Normalize(*this);
 	LongFloat num_b = Normalize(second);
@@ -356,6 +356,49 @@ long double LongFloat::ToLongDouble() const
 		result += pow(10, -i - 1) * a.fractional_part_[i];
 	}
 	return result;
+}
+
+void LongFloat::MathRound()
+{
+	*this = Normalize(*this);
+	if (fractional_part_[0] >= 5) {
+		if (is_negative_) {
+			*this = *this - LongFloat("1");
+		}
+		else {
+			*this = *this + LongFloat("1");
+		}
+	}
+	fractional_part_.clear();
+}
+
+void LongFloat::BankRound()
+{
+	*this = Normalize(*this);
+	if (fractional_part_[0] > 5) {
+		if (is_negative_) {
+			*this = *this - LongFloat("1");
+		}
+		else {
+			*this = *this + LongFloat("1");
+		}
+	}
+	else if (fractional_part_[0] == 5) {
+		if(whole_part_[whole_part_.size() - 1] % 2 != 0) {
+			if (is_negative_) {
+				*this = *this - LongFloat("1");
+			}
+			else {
+				*this = *this + LongFloat("1");
+			}
+		}
+	}
+	fractional_part_.clear();
+}
+
+void LongFloat::TruncRound()
+{
+	fractional_part_.clear();
 }
 
 bool LongFloat::operator==(const LongFloat& second) const

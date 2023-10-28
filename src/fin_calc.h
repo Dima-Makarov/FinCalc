@@ -9,11 +9,14 @@ public:
 	LongFloat(std::string str);
 	LongFloat(long double val);
 	std::string to_string() const;
-	LongFloat operator+(const LongFloat& second);
-	LongFloat operator-(const LongFloat& second);
-	LongFloat operator*(const LongFloat& second);
-	LongFloat operator/(const LongFloat& second);
+	LongFloat operator+(const LongFloat& second) const;
+	LongFloat operator-(const LongFloat& second) const;
+	LongFloat operator*(const LongFloat& second) const;
+	LongFloat operator/(const LongFloat& second) const;
 	long double ToLongDouble() const;
+	void MathRound();
+	void BankRound();
+	void TruncRound();
 
 	bool operator==(const LongFloat& second)const;
 	bool operator!=(const LongFloat& second)const;
