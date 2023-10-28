@@ -6,7 +6,7 @@
 
 LongFloat::LongFloat() {
 	whole_part_.resize(13);
-	fractional_part_.resize(6);
+	fractional_part_.resize(10);
 }
 
 LongFloat::LongFloat(std::string str)
@@ -107,6 +107,7 @@ std::string LongFloat::to_string() const
 {	
 	LongFloat a = *this;
 	a = Normalize(a);
+	a = RoundTo6Decimals(a);
 	std::string result;
 	if (a == LongFloat("0,0")) {
 		return "0";
@@ -159,6 +160,9 @@ std::string LongFloat::to_string() const
 	}
 	if (result[0] == ' ') {
 		result.erase(0, 1);
+	}
+	if (result == "-") {
+		return "0";
 	}
 	return result;
 }
@@ -252,26 +256,26 @@ LongFloat LongFloat::operator*(const LongFloat& second)
 	std::reverse(c.begin(), c.end());
 
 	LongFloat result;
-	for (int i = c.size() - 12; i < c.size() - 6; i++) {
-		result.fractional_part_[i - c.size() + 12] = c[i];
+	for (int i = c.size() - 20; i < c.size() - 10; i++) {
+		result.fractional_part_[i - c.size() + 20] = c[i];
 	}
 
-	int first_nonzero_index = c.size() - 12;
+	int first_nonzero_index = c.size() - 20;
 
-	for (int i = 0; i < c.size() - 12; i++) {
+	for (int i = 0; i < c.size() - 20; i++) {
 		if (c[i] != 0) {
 			first_nonzero_index = i;
 			break;
 		}
 	}
 
-	if (c.size() - first_nonzero_index - 12 > 13) {
+	if (c.size() - first_nonzero_index - 20 > 13) {
 		throw std::invalid_argument(u8"Число слишком большое");
 	}
 	
-	int begin_index = c.size() - 12 - 13;
+	int begin_index = c.size() - 20 - 13;
 
-	for (int i = begin_index; i < c.size() - 12; i++) {
+	for (int i = begin_index; i < c.size() - 20; i++) {
 		result.whole_part_[i - begin_index] = c[i];
 	}
 
@@ -284,7 +288,7 @@ LongFloat LongFloat::operator/(const LongFloat& second)
 {
 	LongFloat num_a = Normalize(*this);
 	LongFloat num_b = Normalize(second);
-	if (num_b == LongFloat("0")) {
+	if (num_b == LongFloat("0") || num_b == LongFloat("-0")) {
 		throw std::invalid_argument(u8"Деление на ноль");
 	}
 	auto vec_to_str = [](const std::vector<int8_t>& vec) {
@@ -317,14 +321,14 @@ LongFloat LongFloat::operator/(const LongFloat& second)
 	std::string r_debug = remainder.big_int_to_string(bi::bi_base::BI_DEC);
 
 	auto rem_str = remainder.big_int_to_string(bi::bi_base::BI_DEC);
-	long double rem_double = std::stoll(rem_str);
+	long double rem_double = std::stod(rem_str);
 
-	rem_double /= 1e6;
+	rem_double /= 1e10;
 	rem_double /= num_b.ToLongDouble();
-	rem_double *= 1e6;
+	rem_double *= 1e10;
 	int64_t rem_int = static_cast<int64_t>(rem_double);
 	std::stringstream ss;
-	ss << std::setw(6) << std::setfill('0') << rem_int;
+	ss << std::setw(10) << std::setfill('0') << rem_int;
 	LongFloat result = std::string(quotient.big_int_to_string(bi::bi_base::BI_DEC)
 		+ "."
 		+ std::string(ss.str()));
@@ -436,7 +440,7 @@ bool LongFloat::operator<(const LongFloat& second) const
 LongFloat LongFloat::Normalize(const LongFloat& f)
 {
 	LongFloat result = f;
-	result.fractional_part_.resize(6);
+	result.fractional_part_.resize(10);
 	int size = result.whole_part_.size();
 	if (size > 13) {
 		throw std::invalid_argument(u8"Число слишком большое");
@@ -502,4 +506,18 @@ LongFloat LongFloat::SubTwoNumbersWnoSign(const LongFloat& one, const LongFloat&
 		result.whole_part_[i] = diff;
 	}
 	return result;
+}
+
+LongFloat LongFloat::RoundTo6Decimals(const LongFloat& a) {
+	LongFloat c = Normalize(a);
+	if (c.fractional_part_[6] >= 5) {
+		if (c.is_negative_) {
+			c = c - LongFloat("0.000001");
+		}
+		else {
+			c = c + LongFloat("0.000001");
+		}
+	}
+	c.fractional_part_.erase(c.fractional_part_.begin() + 6, c.fractional_part_.end());
+	return c;
 }
