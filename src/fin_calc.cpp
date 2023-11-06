@@ -375,7 +375,7 @@ void LongFloat::MathRound()
 void LongFloat::BankRound()
 {
 	*this = Normalize(*this);
-	if (fractional_part_[0] > 5) {
+	if (GetFractionalPart() > LongFloat("0.5")) {
 		if (is_negative_) {
 			*this = *this - LongFloat("1");
 		}
@@ -383,7 +383,7 @@ void LongFloat::BankRound()
 			*this = *this + LongFloat("1");
 		}
 	}
-	else if (fractional_part_[0] == 5) {
+	else if (GetFractionalPart() == LongFloat("0.5")) {
 		if(whole_part_[whole_part_.size() - 1] % 2 != 0) {
 			if (is_negative_) {
 				*this = *this - LongFloat("1");
@@ -399,6 +399,20 @@ void LongFloat::BankRound()
 void LongFloat::TruncRound()
 {
 	fractional_part_.clear();
+}
+
+LongFloat LongFloat::GetFractionalPart() const
+{	
+	LongFloat res;
+	res.fractional_part_ = this->fractional_part_;
+	return res;
+}
+
+LongFloat LongFloat::GetWholePart() const
+{
+	LongFloat res;
+	res.whole_part_ = this->whole_part_;
+	return res;
 }
 
 bool LongFloat::operator==(const LongFloat& second) const

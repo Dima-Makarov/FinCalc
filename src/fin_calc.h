@@ -17,6 +17,8 @@ public:
 	void MathRound();
 	void BankRound();
 	void TruncRound();
+	LongFloat GetFractionalPart() const;
+	LongFloat GetWholePart() const;
 
 	bool operator==(const LongFloat& second)const;
 	bool operator!=(const LongFloat& second)const;
